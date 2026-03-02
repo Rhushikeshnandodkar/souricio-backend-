@@ -171,14 +171,6 @@ from app.lib.redis_client import close_redis_client, check_redis_health
 #     await close_redis_client()
 
 
-# app = FastAPI(
-#     title=settings.APP_NAME,
-#     description="Product management API for Sourcio",
-#     version=settings.APP_VERSION,
-#     lifespan=lifespan
-# )
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -198,6 +190,14 @@ async def lifespan(app: FastAPI):
 
     print("Shutting down...")
     await close_redis_client()
+
+
+app = FastAPI(
+    title=settings.APP_NAME,
+    description="Product management API for Sourcio",
+    version=settings.APP_VERSION,
+    lifespan=lifespan
+)
 
 
 def custom_openapi():
