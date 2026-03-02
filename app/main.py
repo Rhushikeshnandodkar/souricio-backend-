@@ -26,157 +26,178 @@ from fastapi.openapi.utils import get_openapi
 from app.lib.redis_client import close_redis_client, check_redis_health
 
 
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     """
+#     Lifespan event handler for startup and shutdown events.
+#     """
+#     # Startup: Create tables if they don't exist
+#     try:
+#         from sqlalchemy import inspect as sql_inspect
+#         inspector = sql_inspect(engine)
+#         existing_tables = inspector.get_table_names()
+
+#         # If tables exist, check if they have new columns
+#         needs_recreate = False
+#         if existing_tables:
+#             try:
+#                 # Check if categories table has new columns
+#                 if 'categories' in existing_tables:
+#                     category_columns = [col['name']
+#                                         for col in inspector.get_columns('categories')]
+#                     if 'parent_id' not in category_columns:
+#                         needs_recreate = True
+#                         print(
+#                             "⚠️  Schema mismatch detected. Tables need to be recreated.")
+
+#                 # Check if users table has required columns
+#                 if 'users' in existing_tables:
+#                     user_columns = [col['name']
+#                                     for col in inspector.get_columns('users')]
+#                     required_user_columns = ['role', 'category', 'gst_number', 'shipping_address1',
+#                                              'shipping_address2', 'shipping_pin', 'shipping_city',
+#                                              'shipping_state', 'shipping_country']
+#                     missing_user_columns = [
+#                         col for col in required_user_columns if col not in user_columns]
+#                     if missing_user_columns:
+#                         needs_recreate = True
+#                         print(
+#                             f"⚠️  Schema mismatch detected. Users table missing columns: {missing_user_columns}. Tables need to be recreated.")
+
+#                 # Check if carts table exists and has required columns
+#                 if 'carts' in existing_tables:
+#                     cart_columns = [col['name']
+#                                     for col in inspector.get_columns('carts')]
+#                     required_columns = ['user_id',
+#                                         'product_id', 'variant_id', 'quantity']
+#                     missing_columns = [
+#                         col for col in required_columns if col not in cart_columns]
+#                     if missing_columns:
+#                         needs_recreate = True
+#                         print(
+#                             f"⚠️  Schema mismatch detected. Carts table missing columns: {missing_columns}. Tables need to be recreated.")
+
+#                 # Check if orders table exists and has required columns
+#                 if 'orders' in existing_tables:
+#                     order_columns = [col['name']
+#                                      for col in inspector.get_columns('orders')]
+#                     required_order_columns = ['order_number', 'quote_id', 'user_id', 'status',
+#                                               'subtotal', 'total_tax', 'total', 'tax_breakdown',
+#                                               'notes', 'created_at', 'updated_at']
+#                     missing_order_columns = [
+#                         col for col in required_order_columns if col not in order_columns]
+#                     if missing_order_columns:
+#                         needs_recreate = True
+#                         print(
+#                             f"⚠️  Schema mismatch detected. Orders table missing columns: {missing_order_columns}. Tables need to be recreated.")
+#                 elif 'orders' not in existing_tables:
+#                     print("⚠️  Orders table not found. Will be created on startup.")
+
+#                 # Check if order_items table exists and has required columns
+#                 if 'order_items' in existing_tables:
+#                     order_item_columns = [col['name']
+#                                           for col in inspector.get_columns('order_items')]
+#                     required_order_item_columns = ['order_id', 'product_id', 'product_name',
+#                                                    'price', 'quantity', 'created_at']
+#                     missing_order_item_columns = [
+#                         col for col in required_order_item_columns if col not in order_item_columns]
+#                     if missing_order_item_columns:
+#                         needs_recreate = True
+#                         print(
+#                             f"⚠️  Schema mismatch detected. Order_items table missing columns: {missing_order_item_columns}. Tables need to be recreated.")
+#                 elif 'order_items' not in existing_tables:
+#                     print(
+#                         "⚠️  Order_items table not found. Will be created on startup.")
+#             except Exception as check_error:
+#                 print(f"Warning: Could not check schema: {check_error}")
+#                 needs_recreate = True
+
+#         if needs_recreate:
+#             print("🔄 Dropping and recreating tables to match new schema...")
+#             # Drop all tables with CASCADE to handle foreign key dependencies
+#             try:
+#                 # Use SQLAlchemy's drop_all which handles dependencies
+#                 Base.metadata.drop_all(bind=engine, checkfirst=True)
+#             except Exception as drop_error:
+#                 print(f"Warning during drop_all: {drop_error}")
+#                 # Fallback: drop tables individually with CASCADE
+#                 try:
+#                     from sqlalchemy import inspect as sql_inspect
+#                     inspector = sql_inspect(engine)
+#                     existing_tables = inspector.get_table_names()
+#                     with engine.begin() as conn:
+#                         # Drop tables in reverse dependency order
+#                         for table_name in reversed(existing_tables):
+#                             conn.execute(
+#                                 text(f'DROP TABLE IF EXISTS "{table_name}" CASCADE'))
+#                 except Exception as fallback_error:
+#                     print(f"Fallback drop failed: {fallback_error}")
+
+#             Base.metadata.create_all(bind=engine)
+#             print("✓ Tables recreated successfully")
+#         else:
+#             Base.metadata.create_all(bind=engine)
+#     except Exception as e:
+#         print(f"Error creating tables: {e}")
+#         # If creation fails due to schema mismatch, try dropping first
+#         try:
+#             print("Attempting to drop and recreate tables...")
+#             # Use SQLAlchemy's drop_all which handles dependencies
+#             try:
+#                 Base.metadata.drop_all(bind=engine, checkfirst=True)
+#             except Exception as drop_error:
+#                 print(f"Warning during drop_all: {drop_error}")
+#                 # Fallback: drop tables individually with CASCADE
+#                 try:
+#                     from sqlalchemy import inspect as sql_inspect
+#                     inspector = sql_inspect(engine)
+#                     existing_tables = inspector.get_table_names()
+#                     with engine.begin() as conn:
+#                         # Drop tables in reverse dependency order
+#                         for table_name in reversed(existing_tables):
+#                             conn.execute(
+#                                 text(f'DROP TABLE IF EXISTS "{table_name}" CASCADE'))
+#                 except Exception as fallback_error:
+#                     print(f"Fallback drop failed: {fallback_error}")
+
+#             Base.metadata.create_all(bind=engine)
+#             print("✓ Tables recreated successfully")
+#         except Exception as e2:
+#             print(f"Error resetting database: {e2}")
+
+#     yield
+
+#     # Shutdown: Close Redis connection
+#     await close_redis_client()
+
+
+# app = FastAPI(
+#     title=settings.APP_NAME,
+#     description="Product management API for Sourcio",
+#     version=settings.APP_VERSION,
+#     lifespan=lifespan
+# )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Lifespan event handler for startup and shutdown events.
+    Safe startup for Render deployment
     """
-    # Startup: Create tables if they don't exist
+
+    print("Starting application...")
+
     try:
-        from sqlalchemy import inspect as sql_inspect
-        inspector = sql_inspect(engine)
-        existing_tables = inspector.get_table_names()
-
-        # If tables exist, check if they have new columns
-        needs_recreate = False
-        if existing_tables:
-            try:
-                # Check if categories table has new columns
-                if 'categories' in existing_tables:
-                    category_columns = [col['name']
-                                        for col in inspector.get_columns('categories')]
-                    if 'parent_id' not in category_columns:
-                        needs_recreate = True
-                        print(
-                            "⚠️  Schema mismatch detected. Tables need to be recreated.")
-
-                # Check if users table has required columns
-                if 'users' in existing_tables:
-                    user_columns = [col['name']
-                                    for col in inspector.get_columns('users')]
-                    required_user_columns = ['role', 'category', 'gst_number', 'shipping_address1',
-                                             'shipping_address2', 'shipping_pin', 'shipping_city',
-                                             'shipping_state', 'shipping_country']
-                    missing_user_columns = [
-                        col for col in required_user_columns if col not in user_columns]
-                    if missing_user_columns:
-                        needs_recreate = True
-                        print(
-                            f"⚠️  Schema mismatch detected. Users table missing columns: {missing_user_columns}. Tables need to be recreated.")
-
-                # Check if carts table exists and has required columns
-                if 'carts' in existing_tables:
-                    cart_columns = [col['name']
-                                    for col in inspector.get_columns('carts')]
-                    required_columns = ['user_id',
-                                        'product_id', 'variant_id', 'quantity']
-                    missing_columns = [
-                        col for col in required_columns if col not in cart_columns]
-                    if missing_columns:
-                        needs_recreate = True
-                        print(
-                            f"⚠️  Schema mismatch detected. Carts table missing columns: {missing_columns}. Tables need to be recreated.")
-
-                # Check if orders table exists and has required columns
-                if 'orders' in existing_tables:
-                    order_columns = [col['name']
-                                     for col in inspector.get_columns('orders')]
-                    required_order_columns = ['order_number', 'quote_id', 'user_id', 'status',
-                                              'subtotal', 'total_tax', 'total', 'tax_breakdown',
-                                              'notes', 'created_at', 'updated_at']
-                    missing_order_columns = [
-                        col for col in required_order_columns if col not in order_columns]
-                    if missing_order_columns:
-                        needs_recreate = True
-                        print(
-                            f"⚠️  Schema mismatch detected. Orders table missing columns: {missing_order_columns}. Tables need to be recreated.")
-                elif 'orders' not in existing_tables:
-                    print("⚠️  Orders table not found. Will be created on startup.")
-
-                # Check if order_items table exists and has required columns
-                if 'order_items' in existing_tables:
-                    order_item_columns = [col['name']
-                                          for col in inspector.get_columns('order_items')]
-                    required_order_item_columns = ['order_id', 'product_id', 'product_name',
-                                                   'price', 'quantity', 'created_at']
-                    missing_order_item_columns = [
-                        col for col in required_order_item_columns if col not in order_item_columns]
-                    if missing_order_item_columns:
-                        needs_recreate = True
-                        print(
-                            f"⚠️  Schema mismatch detected. Order_items table missing columns: {missing_order_item_columns}. Tables need to be recreated.")
-                elif 'order_items' not in existing_tables:
-                    print(
-                        "⚠️  Order_items table not found. Will be created on startup.")
-            except Exception as check_error:
-                print(f"Warning: Could not check schema: {check_error}")
-                needs_recreate = True
-
-        if needs_recreate:
-            print("🔄 Dropping and recreating tables to match new schema...")
-            # Drop all tables with CASCADE to handle foreign key dependencies
-            try:
-                # Use SQLAlchemy's drop_all which handles dependencies
-                Base.metadata.drop_all(bind=engine, checkfirst=True)
-            except Exception as drop_error:
-                print(f"Warning during drop_all: {drop_error}")
-                # Fallback: drop tables individually with CASCADE
-                try:
-                    from sqlalchemy import inspect as sql_inspect
-                    inspector = sql_inspect(engine)
-                    existing_tables = inspector.get_table_names()
-                    with engine.begin() as conn:
-                        # Drop tables in reverse dependency order
-                        for table_name in reversed(existing_tables):
-                            conn.execute(
-                                text(f'DROP TABLE IF EXISTS "{table_name}" CASCADE'))
-                except Exception as fallback_error:
-                    print(f"Fallback drop failed: {fallback_error}")
-
-            Base.metadata.create_all(bind=engine)
-            print("✓ Tables recreated successfully")
-        else:
-            Base.metadata.create_all(bind=engine)
+        # SAFE automatic table creation
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database tables ensured")
     except Exception as e:
-        print(f"Error creating tables: {e}")
-        # If creation fails due to schema mismatch, try dropping first
-        try:
-            print("Attempting to drop and recreate tables...")
-            # Use SQLAlchemy's drop_all which handles dependencies
-            try:
-                Base.metadata.drop_all(bind=engine, checkfirst=True)
-            except Exception as drop_error:
-                print(f"Warning during drop_all: {drop_error}")
-                # Fallback: drop tables individually with CASCADE
-                try:
-                    from sqlalchemy import inspect as sql_inspect
-                    inspector = sql_inspect(engine)
-                    existing_tables = inspector.get_table_names()
-                    with engine.begin() as conn:
-                        # Drop tables in reverse dependency order
-                        for table_name in reversed(existing_tables):
-                            conn.execute(
-                                text(f'DROP TABLE IF EXISTS "{table_name}" CASCADE'))
-                except Exception as fallback_error:
-                    print(f"Fallback drop failed: {fallback_error}")
-
-            Base.metadata.create_all(bind=engine)
-            print("✓ Tables recreated successfully")
-        except Exception as e2:
-            print(f"Error resetting database: {e2}")
+        print(f"Database startup error: {e}")
 
     yield
 
-    # Shutdown: Close Redis connection
+    print("Shutting down...")
     await close_redis_client()
-
-
-app = FastAPI(
-    title=settings.APP_NAME,
-    description="Product management API for Sourcio",
-    version=settings.APP_VERSION,
-    lifespan=lifespan
-)
 
 
 def custom_openapi():
