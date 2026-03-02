@@ -30,6 +30,7 @@ class Settings(BaseSettings):
         "http://127.0.0.1:8000",
         "https://sourcio-commerce.vercel.app",
         "https://sourcio-admin.vercel.app",
+        "https://souricio-backend-2.onrender.com"
     ]
 
     """Security & JWT settings"""
